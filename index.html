@@ -348,7 +348,10 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
           select.appendChild(opt);
         });
         select.style.width = '100%';
-        select.value = data.presentacion ?? '16oz';
+    select.value = (data.presentacion !== undefined && data.presentacion !== null)
+  ? data.presentacion
+  : '16oz';
+
         tdSel.appendChild(select);
         tr.appendChild(tdSel);
 
