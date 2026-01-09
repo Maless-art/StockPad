@@ -392,7 +392,9 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 
 
         // Conversión
-        makeInput(data.conversion ?? '');
+        makeInput(
+  (data.conversion !== undefined && data.conversion !== null) ? data.conversion : ''
+);
 
         // U/M
         const umInput = makeInput(data.um ?? '55');
@@ -913,17 +915,18 @@ function exportarReempaqueExcel() {
     'Desechados'
   ]);
 
-  filas.forEach(tr => {
-    const i = tr.querySelectorAll('input');
-    rows.push([
-      i[0]?.value || '',
-      i[1]?.value || '',
-      i[2]?.value || '',
-      i[3]?.value || '',
-      i[4]?.value || '',
-      i[5]?.value || ''
-    ]);
-  });
+  filas.forEach(function (tr) {
+  var i = tr.querySelectorAll('input');
+  rows.push([
+    (i[0] && i[0].value) ? i[0].value : '',
+    (i[1] && i[1].value) ? i[1].value : '',
+    (i[2] && i[2].value) ? i[2].value : '',
+    (i[3] && i[3].value) ? i[3].value : '',
+    (i[4] && i[4].value) ? i[4].value : '',
+    (i[5] && i[5].value) ? i[5].value : ''
+  ]);
+});
+
 
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(rows);
