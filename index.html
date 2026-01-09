@@ -777,16 +777,17 @@ function cargarReenvaseLS() {
         XLSX.writeFile(wb, `stockpad_devolución_${fecha}.xls`);
       }
 
-      // ===== Boot =====
-      window.addEventListener('load', () => {
+ // ===== Boot =====
+window.addEventListener('load', function () {
   cargarDevolucionLS();
   cargarReenvaseLS();
   initTanques();
-
 });
 
+window.addEventListener('beforeunload', function () {
+  guardarDevolucionLS();
+});
 
-      window.addEventListener('beforeunload', () => guardarDevolucionLS());
 
     </script>
 <script>
