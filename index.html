@@ -397,18 +397,23 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 );
 
         // U/M
-        const umInput = makeInput(data.um ?? '55');
-        if (umInput.value === '') umInput.value = '55';
+var umValor = (data.um !== undefined && data.um !== null) ? data.um : '55';
+var umInput = makeInput(umValor);
+if (umInput.value === '') umInput.value = '55';
 
-        // Reenvasado (readonly)
-        makeInput(data.reenvasado ?? '0', true);
+// Reenvasado (readonly)
+var reenvasadoValor =
+  (data.reenvasado !== undefined && data.reenvasado !== null)
+    ? data.reenvasado
+    : '0';
+makeInput(reenvasadoValor, true);
 
-        // autosave
-        tr.addEventListener('input', guardarTanqueActivo);
-        tr.addEventListener('change', guardarTanqueActivo);
+// autosave
+tr.addEventListener('input', guardarTanqueActivo);
+tr.addEventListener('change', guardarTanqueActivo);
 
-        return tr;
-      }
+return tr;
+
 
      function guardarTanqueActivo() {
   const tbody = document.querySelector('#reenvase-table tbody');
@@ -946,18 +951,22 @@ function exportarReempaqueExcel() {
 const LS_REEMPAQUE_KEY = 'reempaque';
 
 function guardarReempaqueLS() {
-  const filas = [];
-  document.querySelectorAll('#reempaque-table tbody tr').forEach(tr => {
-    const i = tr.querySelectorAll('input');
+  var filas = [];
+  var trs = document.querySelectorAll('#reempaque-table tbody tr');
+
+  trs.forEach(function (tr) {
+    var i = tr.querySelectorAll('input');
+
     filas.push({
-      cantidad: i[0]?.value || '',
-      producto: i[1]?.value || '',
-      envases: i[2]?.value || '',
-      etiquetasCant: i[3]?.value || '',
-      etiquetasTipo: i[4]?.value || '',
-      desechados: i[5]?.value || ''
+      cantidad:   (i[0] && i[0].value) ? i[0].value : '',
+      producto:   (i[1] && i[1].value) ? i[1].value : '',
+      envases:    (i[2] && i[2].value) ? i[2].value : '',
+      etiquetasCant: (i[3] && i[3].value) ? i[3].value : '',
+      etiquetasTipo: (i[4] && i[4].value) ? i[4].value : '',
+      desechados: (i[5] && i[5].value) ? i[5].value : ''
     });
   });
+
   localStorage.setItem(LS_REEMPAQUE_KEY, JSON.stringify(filas));
 }
 
