@@ -360,7 +360,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 	const prodInput = document.createElement('input');
 	prodInput.type = 'text';
 	prodInput.style.width = '100%';
-	prodInput.value = data.producto ?? '';
+	prodInput.value = (data && data.producto) ? data.producto : '';
 	tdProd.appendChild(prodInput);
 	tr.appendChild(tdProd);
 
