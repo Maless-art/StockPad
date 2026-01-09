@@ -326,14 +326,15 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   const inputs = tr.querySelectorAll('input');
 
   return {
-    presentacion: sel ? sel.value : '16oz',
-    producto: inputs[0]?.value ?? '',     // ✅ PRODUCTO CORRECTO
-    ingreso: inputs[1]?.value ?? '',
-    inventario: inputs[2]?.value ?? '0',
-    conversion: inputs[3]?.value ?? '',
-    um: inputs[4]?.value ?? '55',
-    reenvasado: inputs[5]?.value ?? '0'
-  };
+  presentacion: sel && sel.value ? sel.value : '16oz',
+  producto: inputs[0] && inputs[0].value ? inputs[0].value : '',
+  ingreso: inputs[1] && inputs[1].value ? inputs[1].value : '0',
+  inventario: inputs[2] && inputs[2].value ? inputs[2].value : '0',
+  conversion: inputs[3] && inputs[3].value ? inputs[3].value : '0',
+  um: inputs[4] && inputs[4].value ? inputs[4].value : '55',
+  reenvasado: inputs[5] && inputs[5].value ? inputs[5].value : '0'
+};
+
 }
       function pintarFilaReenvase(data = {}) {
         const tr = document.createElement('tr');
