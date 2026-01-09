@@ -741,41 +741,47 @@ function cargarReenvaseLS() {
         });
       }
 
-      function exportarDevolucionExcel() {
-        const rows = [];
+   function exportarDevolucionExcel() {
+  var rows = [];
 
-        const hoy = new Date();
-        const fecha = hoy.toISOString().slice(0,10);
-        const hora  = hoy.toTimeString().slice(0,5);
+  var hoy = new Date();
+  var fecha = hoy.toISOString().slice(0, 10);
+  var hora = hoy.toTimeString().slice(0, 5);
 
-        rows.push(['Lubricantes y Químicos, S. A.']);
-        rows.push(['Libreta de Devoluciones de Inventario y Procesos Relacionados']);
-        rows.push(['Reenvasado']);
-        rows.push([]);
-        rows.push([`Por: Ricardo Jované`, '', '', 'Fecha:', fecha]);
-        rows.push(['', '', '', 'Hora:', hora]);
-        rows.push([]);
-        rows.push(['Inventario (U)', 'Producto']);
+  rows.push(['Lubricantes y Químicos, S. A.']);
+  rows.push(['Libreta de Devoluciones de Inventario y Procesos Relacionados']);
+  rows.push(['Reenvasado']);
+  rows.push([]);
+  rows.push(['Por: Ricardo Jované', '', '', 'Fecha:', fecha]);
+  rows.push(['', '', '', 'Hora:', hora]);
+  rows.push([]);
+  rows.push(['Inventario (U)', 'Producto']);
 
-        document.querySelectorAll('#devolucion-table tbody tr').forEach(tr => {
-          const inputs = tr.querySelectorAll('input');
-          rows.push([ inputs[2].value || '', inputs[3].value || '' ]);
-        });
+  document
+    .querySelectorAll('#devolucion-table tbody tr')
+    .forEach(function (tr) {
+      var inputs = tr.querySelectorAll('input');
+      rows.push([
+        (inputs[2] && inputs[2].value) ? inputs[2].value : '',
+        (inputs[3] && inputs[3].value) ? inputs[3].value : ''
+      ]);
+    });
 
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet(rows);
-        XLSX.utils.book_append_sheet(wb, ws, 'Devoluciones');
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'Devoluciones');
 
-        ws['!cols'] = [
-          { wch: 17.74 },
-          { wch: 12 },
-          { wch: 5 },
-          { wch: 10 },
-          { wch: 12 }
-        ];
+  ws['!cols'] = [
+    { wch: 17.74 },
+    { wch: 12 },
+    { wch: 5 },
+    { wch: 10 },
+    { wch: 12 }
+  ];
 
-        XLSX.writeFile(wb, `stockpad_devolución_${fecha}.xls`);
-      }
+  XLSX.writeFile(wb, 'stockpad_devolucion_' + fecha + '.xls');
+}
+
 
  // ===== Boot =====
 window.addEventListener('load', function () {
