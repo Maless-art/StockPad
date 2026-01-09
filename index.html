@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>StockPad</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#b71c1c">
+
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body { margin:0; font-family:system-ui,sans-serif; background:#fff; }
+
+    #splash{
+      position:fixed; inset:0; background:#fff!important;
+      display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;
+    }
+    .logo{ width:160px; margin-bottom:16px; }
+    h1{ margin:0 0 24px; }
+
+    .progress-container{ width:70%; background:#ddd; border-radius:20px; overflow:hidden; height:26px; margin-bottom:12px; }
+    .progress-bar{
+      height:100%; width:0%; background:#b71c1c; display:flex; align-items:center; justify-content:center;
+      color:#fff; font-size:14px; transition:width 0.04s linear;
+    }
+    #splash-message{ margin-top:12px; font-size:14px; color:#555; }
+
+    .app-header{
+      display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:12px;
+      padding:12px 16px; background:#fff; border-bottom:1px solid #e5e5e5;
+    }
+    .header-logo{ height:40px; }
+    .header-center{ text-align:center; }
+    .company{ font-weight:700; font-size:16px; }
+    .subtitle{ font-size:12px; color:#666; }
+
+    .app-content{ padding:16px; }
+
+    .tabs{ display:flex; gap:8px; margin-bottom:16px; }
+    .tab-btn{
+      flex:1; padding:10px; border:none; border-radius:6px;
+      background:#f1c40f; color:#333; font-weight:600; cursor:pointer;
+      transition:background .25s ease, transform .15s ease, box-shadow .15s ease;
+    }
+    .tab-btn.active{ background:#b71c1c; color:#fff; }
+    .tab-btn:active{ transform:translateY(1px); box-shadow:0 2px 6px rgba(0,0,0,.15) inset; }
+
+    .tab-view{ display:none; background:#fff; padding:16px; border-radius:8px; border:1px solid #e5e5e5; }
+    .tab-view.active{ display:block; }
+
+    .form-row{ display:flex; gap:12px; align-items:center; margin-bottom:12px; }
+    .form-row label{ font-weight:600; }
+    .form-row input{ padding:6px; }
+
+    .data-table{ width:100%; border-collapse:collapse; margin-bottom:12px; }
+    .data-table th,.data-table td{ border:1px solid #ddd; padding:6px; text-align:left; }
+    .data-table th{ background:#f5f5f5; }
+
+    .actions{ display:flex; gap:8px; }
+    .actions button{ padding:8px 12px; border:none; border-radius:6px; cursor:pointer;
+      transition:transform .15s ease, box-shadow .15s ease, background-color .15s ease;
+    }
+    .actions button:hover{ transform:translateY(-1px); box-shadow:0 3px 8px rgba(0,0,0,.12); }
+    .actions .danger{ background:#e53935; color:#fff; }
+    .actions button.approve{ background:#1976d2; color:#fff; }
+    .actions button.approve:hover{ background:#1565c0; }
+  </style>
+</head>
+
+<body>
+
+  <!-- SPLASH SCREEN -->
+  <div id="splash">
+    <img src="icon-512.png" alt="StockPad" class="logo">
+    <h1>StockPad</h1>
+
+    <div class="progress-container">
+      <div class="progress-bar">
+        <span id="progress-text">0%</span>
+      </div>
+    </div>
+
+    <p id="splash-message">Cargando...</p>
+  </div>
+
+  <div id="app" style="display:none;">
+
+   <header class="app-header">
+<div style="display:flex; align-items:center; gap:6px;">
+  <img src="icon-192.png" alt="StockPad" class="header-logo left">
+  <span style="font-size:12px; color:#666; font-weight:600;">v1.0</span>
+</div>
+
+
+  <div class="header-center">
+    <div class="company">Lubricantes y Químicos, S. A.</div>
+    <div class="subtitle">Control de inventario y procesos relacionados</div>
+  </div>
+
+  <img src="luquisa-logo.png" alt="Luquisa" class="header-logo right">
+</header>
+
+
+    <main class="app-content">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="reenvase">Reenvase</button>
+        <button class="tab-btn" data-tab="reempaque">Reempaque</button>
+        <button class="tab-btn" data-tab="devolucion">Devolución</button>
+      </div>
+
+      <!-- REENVASE -->
+      <section id="reenvase" class="tab-view active">
+        <h3>Reenvase</h3>
+
+        <div class="form-row">
+          <label>Fecha:</label>
+          <input type="date" id="reenvase-fecha" required>
+
+          <label>Por:</label>
+          <input type="text" id="reenvase-por" placeholder="Nombre del responsable">
+        </div>
+
+        <div class="form-row">
+          <label>Tanque:</label>
+          <select id="tanqueSelect"></select>
+
+          <button type="button" onclick="nuevoTanque()">
+            + Nuevo tanque
+          </button>
+        </div>
+
+        <table class="data-table" id="reenvase-table">
+          <thead>
+            <tr>
+              <th>Presentación</th>
+              <th>Producto</th>
+              <th>Ingreso</th>
+              <th>Inventario</th>
+              <th>Conversión (gls)</th>
+              <th>U/M (gls)</th>
+              <th>Reenvasado</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+
+        <div class="actions">
+          <button onclick="addRow('reenvase-table')">Agregar fila</button>
+          <button onclick="confirmarIngresoReenvase()">Confirmar ingreso</button>
+          <button onclick="confirmarConversionReenvase()">Confirmar conversión</button>
+          <button onclick="exportarReenvaseExcel()">Exportar Excel</button>
+          <button class="danger" onclick="reiniciarInventarioReenvase()">Reiniciar inventario</button>
+        </div>
+      </section>
+
+      <!-- REEMPAQUE -->
+      <section id="reempaque" class="tab-view">
+  <h3>Reempaque</h3>
+
+  <table class="data-table" id="reempaque-table">
+    <thead>
+      <tr>
+        <th>Cantidad</th>
+        <th>Producto</th>
+        <th>Envases</th>
+        <th>Etiquetas (Cant.)</th>
+        <th>Etiquetas (Tipo)</th>
+        <th>Desechados</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="actions">
+    <button type="button" onclick="addRow('reempaque-table')">
+      Agregar fila
+    </button>
+
+    <button
+      id="registrar-reempaque"
+      type="button"
+      class="approve"
+    >
+      Registrar reempaque
+    </button>
+
+   <button type="button" onclick="exportarReempaqueExcel()">
+  Exportar Excel
+</button>
+
+   <button
+  type="button"
+  class="danger"
+  onclick="reiniciarReempaque()"
+>
+  Reiniciar reempaque
+</button>
+
+  </div>
+</section>
+
+
+      <!-- DEVOLUCIÓN -->
+      <section id="devolucion" class="tab-view">
+        <h3>Devolución</h3>
+
+        <table class="data-table" id="devolucion-table">
+          <thead>
+            <tr>
+              <th>Ingreso</th>
+              <th>Inventario</th>
+              <th>Stock</th>
+              <th>Producto</th>
+              <th>Reenvase</th>
+              <th>Reempaque</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+
+        <div class="actions">
+          <button onclick="addRow('devolucion-table')">Agregar fila</button>
+          <button onclick="confirmarIngreso()">Confirmar ingreso</button>
+          <button onclick="confirmarRetiros()">Confirmar retiros</button>
+
+          <button id="aceptarDevolucion" class="approve">Aceptar y continuar</button>
+
+          <button onclick="exportarDevolucionExcel()">Exportar Excel</button>
+          <button class="danger" onclick="reiniciarInventarioDevolucion()">Reiniciar inventario</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- LIBRERÍAS -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="splash.js"></script>
+
+    <!-- ✅ ÚNICO SCRIPT (TODO TU JS AQUÍ) -->
+    <script>
+      // ===== Estado general =====
+      let confirmandoInventario = false;
+      
+
+      const appState = {
+        devolucionEditada: false,
+        lastReminder: localStorage.getItem('lastReminder') || 0
+      };
+
+      // ===== Recordatorio 1 vez al día =====
+     
+
+    
+
+      // ===== Tabs + bloqueo =====
+      const tabButtons = document.querySelectorAll('.tab-btn');
+      const tabViews = document.querySelectorAll('.tab-view');
+
+
+      tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.tab;
+
+          if ((target === 'reenvase' || target === 'reempaque') && !appState.devolucionEditada) {
+            alert('⚠️ Debes registrar primero los movimientos en Devolución.');
+            return;
+          }
+
+          tabButtons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          tabViews.forEach(view => view.classList.toggle('active', view.id === target));
+        });
+      });
+
+      // ===== Mensajes motivación =====
+      const mensajesMotivacion = [
+        'Buen trabajo papá! 😉👌',
+        'Bomba carambomba! 💪',
+        'Excelente, así se hace 🔥',
+        'Paso a paso, lo estás logrando 👏',
+        'Sigue así, estas forjando tu actitud 😎',
+        'Siéntete orgulloso de ti, yo ya lo estoy! 🚀'
+      ];
+      function mensajeRandom() {
+        return mensajesMotivacion[Math.floor(Math.random() * mensajesMotivacion.length)];
+      }
+      document.getElementById('aceptarDevolucion').onclick = () => {
+        const ok = confirm(`${mensajeRandom()}\n\n¿Deseas continuar?`);
+        if (!ok) return;
+        appState.devolucionEditada = true;
+// 🔓 Habilitar Reenvase y Reempaque
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  if (btn.dataset.tab === 'reenvase' || btn.dataset.tab === 'reempaque') {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+  }
+});
+
+      };
+
+      // ============================================================
+      // ✅ TANQUES REENVASE (solución real: cada tanque guarda sus filas)
+      // ============================================================
+      let tanqueActivo = 1;
+      let tanques = { 1: [] };
+      const acumuladoPorTanque = { 1: 0 }; // tanque -> acumulado reenvasado (0..55)
+
+      function asegurarTanque(n) {
+        if (!tanques[n]) tanques[n] = [];
+        if (acumuladoPorTanque[n] == null) acumuladoPorTanque[n] = 0;
+      }
+
+     function leerFilaReenvase(tr) {
+  const sel = tr.querySelector('select');
+  const inputs = tr.querySelectorAll('input');
+
+  return {
+    presentacion: sel ? sel.value : '16oz',
+    producto: inputs[0]?.value ?? '',     // ✅ PRODUCTO CORRECTO
+    ingreso: inputs[1]?.value ?? '',
+    inventario: inputs[2]?.value ?? '0',
+    conversion: inputs[3]?.value ?? '',
+    um: inputs[4]?.value ?? '55',
+    reenvasado: inputs[5]?.value ?? '0'
+  };
+}
+      function pintarFilaReenvase(data = {}) {
+        const tr = document.createElement('tr');
+
+        // Presentación (select)
+        const tdSel = document.createElement('td');
+        const select = document.createElement('select');
+        ['16oz','32oz','1/2 Galón','Galón'].forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p; opt.textContent = p;
+          select.appendChild(opt);
+        });
+        select.style.width = '100%';
+        select.value = data.presentacion ?? '16oz';
+        tdSel.appendChild(select);
+        tr.appendChild(tdSel);
+
+	// Producto (texto)
+	const tdProd = document.createElement('td');
+	const prodInput = document.createElement('input');
+	prodInput.type = 'text';
+	prodInput.style.width = '100%';
+	prodInput.value = data.producto ?? '';
+	tdProd.appendChild(prodInput);
+	tr.appendChild(tdProd);
+
+
+        const makeInput = (val, readOnly=false) => {
+          const td = document.createElement('td');
+          const input = document.createElement('input');
+          input.type = 'number';
+          input.style.width = '100%';
+          input.value = val ?? '';
+          if (readOnly) {
+            input.readOnly = true;
+            input.style.background = '#f5f5f5';
+          }
+          td.appendChild(input);
+          tr.appendChild(td);
+          return input;
+        };
+
+        // Ingreso
+        makeInput(data.ingreso ?? '');
+
+        // Inventario (readonly)
+        makeInput(data.inventario ?? '0', true);
+
+        // Conversión
+        makeInput(data.conversion ?? '');
+
+        // U/M
+        const umInput = makeInput(data.um ?? '55');
+        if (umInput.value === '') umInput.value = '55';
+
+        // Reenvasado (readonly)
+        makeInput(data.reenvasado ?? '0', true);
+
+        // autosave
+        tr.addEventListener('input', guardarTanqueActivo);
+        tr.addEventListener('change', guardarTanqueActivo);
+
+        return tr;
+      }
+
+     function guardarTanqueActivo() {
+  const tbody = document.querySelector('#reenvase-table tbody');
+  const filas = Array.from(tbody.querySelectorAll('tr')).map(leerFilaReenvase);
+  asegurarTanque(tanqueActivo);
+  tanques[tanqueActivo] = filas;
+
+  localStorage.setItem(
+    'reenvaseData',
+    JSON.stringify({
+      tanqueActivo,
+      tanques
+    })
+  );
+}    
+    
+    function cargarTanque(n) {
+  tanqueActivo = n;
+  asegurarTanque(tanqueActivo);
+
+  const tbody = document.querySelector('#reenvase-table tbody');
+  tbody.innerHTML = '';
+  (tanques[tanqueActivo] || []).forEach(row =>
+    tbody.appendChild(pintarFilaReenvase(row))
+  );
+}
+
+
+  function initTanques() {
+  const sel = document.getElementById('tanqueSelect');
+  sel.innerHTML = '';
+
+  Object.keys(tanques).forEach(n => {
+    sel.appendChild(new Option(`Tanque ${n}`, n));
+  });
+
+  if (!tanques[tanqueActivo]) tanqueActivo = Number(Object.keys(tanques)[0] || 1);
+  sel.value = String(tanqueActivo);
+  sel.onchange = () => cargarTanque(Number(sel.value));
+
+  cargarTanque(tanqueActivo);
+}
+
+// ===== LOCAL STORAGE REENVASE (TANQUES COMPLETOS) =====
+const LS_REENVASE_KEY = 'reenvaseData';
+
+
+// Cargar TODO el estado de reenvase
+function cargarReenvaseLS() {
+  const raw = localStorage.getItem('reenvaseData');
+  if (!raw) return;
+
+  const data = JSON.parse(raw);
+  tanqueActivo = Number(data.tanqueActivo || 1);
+  tanques = data.tanques || {};
+
+  initTanques(); // pinta selector y filas desde tanques
+}
+
+
+      function nuevoTanque() {
+        const sel = document.getElementById('tanqueSelect');
+        const nuevo = sel.options.length + 1;
+
+        guardarTanqueActivo();
+        asegurarTanque(nuevo);
+
+        sel.appendChild(new Option(`Tanque ${nuevo}`, String(nuevo)));
+        sel.value = String(nuevo);
+
+        cargarTanque(nuevo);
+      }
+
+      // ============================================================
+      // Esquemas + addRow
+      // ============================================================
+      const tableSchemas = {
+        'reenvase-table': ['select','number','number','number','number','number'],
+        'reempaque-table': ['number','text','number','number','text','number'],
+        'devolucion-table': ['number','number','number','text','number','number']
+      };
+
+
+      function addRow(tableId) {
+        // REENVASE: fila al tanque actual
+        if (tableId === 'reenvase-table') {
+          const tbody = document.querySelector('#reenvase-table tbody');
+          tbody.appendChild(pintarFilaReenvase({ reenvasado:      
+          String(acumuladoPorTanque[tanqueActivo] || 0) }));
+          guardarTanqueActivo();
+          return;
+        }
+
+        // otros
+        const tbody = document.querySelector(`#${tableId} tbody`);
+        const schema = tableSchemas[tableId];
+        const tr = document.createElement('tr');
+
+        schema.forEach((type, index) => {
+          const td = document.createElement('td');
+          const input = document.createElement('input');
+          input.type = type;
+          input.style.width = '100%';
+
+          if (tableId === 'devolucion-table') {
+            if (index === 1) {
+              input.addEventListener('change', () => {
+                if (input.value !== '') input.readOnly = true;
+              });
+            }
+            if (index === 2) {
+              input.readOnly = true;
+              input.style.background = '#f5f5f5';
+            }
+          }
+
+          td.appendChild(input);
+          tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+
+        if (tableId === 'devolucion-table') {
+          const inputs = tr.querySelectorAll('input');
+          inputs[2].value = Number(inputs[1].value) || 0;
+          tr.dataset.stockInit = '1';
+        }
+      }
+
+      // ============================================================
+      // Reenvase: confirmar ingreso / conversion / reiniciar
+      // ============================================================
+      function confirmarIngresoReenvase() {
+  let huboCambio = false;
+
+  document.querySelectorAll('#reenvase-table tbody tr').forEach(tr => {
+    const inputs = tr.querySelectorAll('input');
+
+    const ingreso = Number(inputs[1].value) || 0;   // 👈 AHORA índice correcto
+    const inventarioInput = inputs[2];              // 👈 índice correcto
+
+    if (ingreso > 0) {
+      inventarioInput.value =
+        Number(inventarioInput.value || 0) + ingreso;
+
+      inputs[1].value = ''; // limpiar ingreso
+      huboCambio = true;
+    }
+  });
+
+  if (!huboCambio) {
+    alert('⚠️ No hay ingresos para confirmar.');
+  }
+
+
+}
+
+
+     function confirmarConversionReenvase() {
+  const filas = document.querySelectorAll('#reenvase-table tbody tr');
+  if (!filas.length) return;
+
+  // límite desde U/M (5 o 55)
+  const umInput = filas[0].querySelector('td:nth-child(6) input');
+  const LIMITE = Number(umInput.value) || 55;
+
+  asegurarTanque(tanqueActivo);
+
+  // acumulado REAL del tanque
+  let acumulado = acumuladoPorTanque[tanqueActivo] || 0;
+
+  filas.forEach(tr => {
+    const conversionInput = tr.querySelector('td:nth-child(5) input');
+    let conversion = Number(conversionInput.value) || 0;
+    if (conversion <= 0) return;
+
+    const disponible = LIMITE - acumulado;
+
+    if (disponible <= 0) {
+      alert(`⛔ Tanque lleno (${LIMITE} gls).`);
+      conversionInput.value = '';
+      return;
+    }
+
+    if (conversion > disponible) {
+      alert(`⛔ Solo puedes agregar ${disponible} gls.`);
+      conversion = disponible;
+    }
+
+    acumulado += conversion;
+    conversionInput.value = '';
+  });
+
+  // guardar acumulado del tanque
+  acumuladoPorTanque[tanqueActivo] = acumulado;
+
+  // pintar reenvasado en TODAS las filas
+  filas.forEach(tr => {
+    const rInput = tr.querySelector('td:nth-child(7) input');
+    rInput.value = acumulado;
+  });
+
+  guardarTanqueActivo();
+}
+
+   function reiniciarInventarioReenvase() {
+  if (!confirm('⚠️ Esto reiniciará completamente el reenvase y eliminará todas las filas del tanque actual. ¿Continuar?')) return;
+
+        asegurarTanque(tanqueActivo);
+        tanques[tanqueActivo] = [];
+        acumuladoPorTanque[tanqueActivo] = 0;
+
+        const tbody = document.querySelector('#reenvase-table tbody');
+        tbody.innerHTML = '';
+      }
+
+      // ============================================================
+      // Devolución: ingreso / retiros / reset / LS / export
+      // ============================================================
+      function confirmarIngreso() {
+        let huboCambio = false;
+
+        document.querySelectorAll('#devolucion-table tbody tr').forEach(tr => {
+          const inputs = tr.querySelectorAll('input');
+          const ingreso = Number(inputs[0].value) || 0;
+          const stockCell = inputs[2];
+
+          if (ingreso > 0) {
+            stockCell.value = Number(stockCell.value || 0) + ingreso;
+            inputs[0].value = '';
+            huboCambio = true;
+          }
+        });
+
+        if (huboCambio) guardarDevolucionLS();
+      }
+
+      function confirmarRetiros() {
+        let huboCambio = false;
+
+        document.querySelectorAll('#devolucion-table tbody tr').forEach(tr => {
+          const inputs = tr.querySelectorAll('input');
+
+          const inventario = Number(inputs[1].value) || 0;
+          const stockCell = inputs[2];
+
+          if (!tr.dataset.stockInit) {
+            stockCell.value = inventario;
+            tr.dataset.stockInit = '1';
+          }
+
+          const reenvase = Number(inputs[4].value) || 0;
+          const reempaque = Number(inputs[5].value) || 0;
+          if (reenvase === 0 && reempaque === 0) return;
+
+          const retiro = reenvase + reempaque;
+          stockCell.value = Number(stockCell.value) - retiro;
+
+          tr.dataset.ultimoReenvase = reenvase;
+          tr.dataset.ultimoReempaque = reempaque;
+
+          inputs[4].placeholder = `${reenvase}`;
+          inputs[5].placeholder = `${reempaque}`;
+
+          inputs[4].value = '';
+          inputs[5].value = '';
+
+          huboCambio = true;
+        });
+
+        if (huboCambio) guardarDevolucionLS();
+      }
+
+      function reiniciarInventarioDevolucion() {
+        if (!confirm('⚠️ Esto borrará todo el inventario y las filas. ¿Continuar?')) return;
+
+        document.querySelector('#devolucion-table tbody').innerHTML = '';
+        appState.devolucionEditada = false;
+        localStorage.removeItem('devolucionData');
+        confirmandoInventario = false;
+      }
+
+      function guardarDevolucionLS() {
+        const data = [];
+        document.querySelectorAll('#devolucion-table tbody tr').forEach(tr => {
+          const inputs = tr.querySelectorAll('input');
+          data.push({
+            ingreso: inputs[0].value,
+            inventario: inputs[1].value,
+            stock: inputs[2].value,
+            producto: inputs[3].value,
+            reenvase: inputs[4].value,
+            reempaque: inputs[5].value,
+            ultimoReenvase: tr.dataset.ultimoReenvase || '',
+            ultimoReempaque: tr.dataset.ultimoReempaque || '',
+            stockInit: tr.dataset.stockInit || ''
+          });
+        });
+        localStorage.setItem('devolucionData', JSON.stringify(data));
+      }
+
+      function cargarDevolucionLS() {
+        const raw = localStorage.getItem('devolucionData');
+        if (!raw) return;
+
+        const data = JSON.parse(raw);
+        const tbody = document.querySelector('#devolucion-table tbody');
+        tbody.innerHTML = '';
+
+        data.forEach(row => {
+          addRow('devolucion-table');
+          const tr = tbody.lastElementChild;
+          const inputs = tr.querySelectorAll('input');
+
+          inputs[0].value = row.ingreso || '';
+          inputs[1].value = row.inventario || '';
+          inputs[2].value = row.stock || '';
+          inputs[3].value = row.producto || '';
+          inputs[4].value = row.reenvase || '';
+          inputs[5].value = row.reempaque || '';
+
+          tr.dataset.stockInit = row.stockInit || '1';
+          tr.dataset.ultimoReenvase = row.ultimoReenvase || '0';
+          tr.dataset.ultimoReempaque = row.ultimoReempaque || '0';
+        });
+      }
+
+      function exportarDevolucionExcel() {
+        const rows = [];
+
+        const hoy = new Date();
+        const fecha = hoy.toISOString().slice(0,10);
+        const hora  = hoy.toTimeString().slice(0,5);
+
+        rows.push(['Lubricantes y Químicos, S. A.']);
+        rows.push(['Libreta de Devoluciones de Inventario y Procesos Relacionados']);
+        rows.push(['Reenvasado']);
+        rows.push([]);
+        rows.push([`Por: Ricardo Jované`, '', '', 'Fecha:', fecha]);
+        rows.push(['', '', '', 'Hora:', hora]);
+        rows.push([]);
+        rows.push(['Inventario (U)', 'Producto']);
+
+        document.querySelectorAll('#devolucion-table tbody tr').forEach(tr => {
+          const inputs = tr.querySelectorAll('input');
+          rows.push([ inputs[2].value || '', inputs[3].value || '' ]);
+        });
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        XLSX.utils.book_append_sheet(wb, ws, 'Devoluciones');
+
+        ws['!cols'] = [
+          { wch: 17.74 },
+          { wch: 12 },
+          { wch: 5 },
+          { wch: 10 },
+          { wch: 12 }
+        ];
+
+        XLSX.writeFile(wb, `stockpad_devolución_${fecha}.xls`);
+      }
+
+      // ===== Boot =====
+      window.addEventListener('load', () => {
+  cargarDevolucionLS();
+  cargarReenvaseLS();
+  initTanques();
+
+});
+
+
+      window.addEventListener('beforeunload', () => guardarDevolucionLS());
+
+    </script>
+<script>
+function reenvaseBloqueado() {
+  return !appState.devolucionEditada;
+}
+
+// 🔒 Bloqueo TOTAL de Reenvase (sin cambiar estilos)
+document.getElementById('reenvase').addEventListener('click', (e) => {
+  if (!reenvaseBloqueado()) return;
+
+  const esBoton = e.target.tagName === 'BUTTON';
+  const esInput = e.target.tagName === 'INPUT';
+  const esSelect = e.target.tagName === 'SELECT';
+
+  if (esBoton || esInput || esSelect) {
+    e.preventDefault();
+    e.stopPropagation();
+    alert('⚠️ Debes registrar primero los movimientos en Devolución.');
+  }
+});
+function exportarReenvaseExcel() {
+  const filas = document.querySelectorAll('#reenvase-table tbody tr');
+  if (!filas.length) {
+    alert('⚠️ No hay datos para exportar.');
+    return;
+  }
+const por = document.getElementById('reenvase-por')?.value || '';
+
+  const hoy = new Date();
+  const fecha = hoy.toISOString().slice(0, 10);
+  const hora = hoy.toTimeString().slice(0, 5);
+
+  const rows = [];
+
+  // ENCABEZADO
+  rows.push(['Lubricantes y Químicos, S. A.']);
+  rows.push(['Libreta de Devoluciones de Inventario y Procesos Relacionados']);
+  rows.push(['Reenvasado']);
+  rows.push([]);
+
+  // 👇 FECHA y HORA EN LA MISMA COLUMNA QUE LOS DATOS
+  rows.push([`Por: Ricardo Jované`,'', 'Fecha:', fecha]);
+rows.push(['', '', 'Hora:', hora]);
+ rows.push([]);
+
+  // TÍTULOS (MISMAS COLUMNAS)
+  rows.push([
+    'Inventario (U)',
+    'Producto',
+    'Presentación',
+    'Reenvasado'
+  ]);
+
+  // DATOS
+  filas.forEach(tr => {
+    const select = tr.querySelector('select');
+    const inputs = tr.querySelectorAll('input');
+
+    rows.push([
+      inputs[2]?.value || '', // Inventario
+      inputs[0]?.value || '', // Producto
+      select?.value || '',    // Presentación
+      inputs[5]?.value || ''  // Reenvasado
+    ]);
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'Reenvase');
+
+  ws['!cols'] = [
+    { wch: 18 },
+    { wch: 20 },
+    { wch: 15 },
+    { wch: 15 }
+  ];
+
+  XLSX.writeFile(wb, `reenvase_${fecha}.xls`);
+}
+
+   
+
+
+
+/* ===== FIX DEFINITIVO REEMPAQUE ===== */
+
+function reiniciarReempaque() {
+  if (!confirm('⚠️ Esto borrará el reempaque completo. ¿Continuar?')) return;
+
+  const tbody = document.querySelector('#reempaque-table tbody');
+  if (tbody) tbody.innerHTML = '';
+
+  localStorage.removeItem('reempaque');
+
+  alert('✅ Reempaque reiniciado');
+}
+
+function exportarReempaqueExcel() {
+  const filas = document.querySelectorAll('#reempaque-table tbody tr');
+  if (!filas.length) {
+    alert('⚠️ No hay datos para exportar.');
+    return;
+  }
+
+  const hoy = new Date();
+  const fecha = hoy.toISOString().slice(0,10);
+  const hora  = hoy.toTimeString().slice(0,5);
+
+  const rows = [];
+  rows.push(['Lubricantes y Químicos, S. A.']);
+  rows.push(['Libreta de Devoluciones de Inventario y Procesos Relacionados']);
+  rows.push(['Reempaque']);
+  rows.push([]);
+  rows.push(['Por: Ricardo Jované', '', 'Fecha:', fecha]);
+  rows.push(['', '', 'Hora:', hora]);
+  rows.push([]);
+  rows.push([
+    'Cantidad',
+    'Producto',
+    'Envases',
+    'Etiquetas (Cant.)',
+    'Etiquetas (Tipo)',
+    'Desechados'
+  ]);
+
+  filas.forEach(tr => {
+    const i = tr.querySelectorAll('input');
+    rows.push([
+      i[0]?.value || '',
+      i[1]?.value || '',
+      i[2]?.value || '',
+      i[3]?.value || '',
+      i[4]?.value || '',
+      i[5]?.value || ''
+    ]);
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'Reempaque');
+
+  ws['!cols'] = [
+    { wch: 12 },
+    { wch: 20 },
+    { wch: 12 },
+    { wch: 18 },
+    { wch: 18 },
+    { wch: 12 }
+  ];
+
+  XLSX.writeFile(wb, `reempaque_${fecha}.xls`);
+}
+const LS_REEMPAQUE_KEY = 'reempaque';
+
+function guardarReempaqueLS() {
+  const filas = [];
+  document.querySelectorAll('#reempaque-table tbody tr').forEach(tr => {
+    const i = tr.querySelectorAll('input');
+    filas.push({
+      cantidad: i[0]?.value || '',
+      producto: i[1]?.value || '',
+      envases: i[2]?.value || '',
+      etiquetasCant: i[3]?.value || '',
+      etiquetasTipo: i[4]?.value || '',
+      desechados: i[5]?.value || ''
+    });
+  });
+  localStorage.setItem(LS_REEMPAQUE_KEY, JSON.stringify(filas));
+}
+
+function cargarReempaqueLS() {
+  const raw = localStorage.getItem('reempaque');
+  if (!raw) return;
+
+  const filas = JSON.parse(raw);
+  const tbody = document.querySelector('#reempaque-table tbody');
+  tbody.innerHTML = '';
+
+  filas.forEach(f => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="number" value="${f.cantidad || ''}"></td>
+      <td><input type="text" value="${f.producto || ''}"></td>
+      <td><input type="number" value="${f.envases || ''}"></td>
+      <td><input type="number" value="${f.etiquetasCant || ''}"></td>
+      <td><input type="text" value="${f.etiquetasTipo || ''}"></td>
+      <td><input type="number" value="${f.desechados || ''}"></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+
+
+window.addEventListener('beforeunload', () =>
+  localStorage.setItem(
+    'reempaque',
+    JSON.stringify(
+      [...document.querySelectorAll('#reempaque-table tbody tr')].map(tr => {
+        const i = tr.querySelectorAll('input');
+        return {
+          cantidad: i[0]?.value || '',
+          producto: i[1]?.value || '',
+          envases: i[2]?.value || '',
+          etiquetasCant: i[3]?.value || '',
+          etiquetasTipo: i[4]?.value || '',
+          desechados: i[5]?.value || ''
+        };
+      })
+    )
+  )
+);
+// === BOOT REEMPAQUE ===
+document.getElementById('registrar-reempaque').onclick = () => {
+  guardarReempaqueLS();
+  alert('✅ Reempaque registrado');
+};
+
+window.addEventListener('load', cargarReempaqueLS);
+document.querySelector('#reempaque-table').addEventListener('input', guardarReempaqueLS);
+</script>
+
+  </div>
+</body>
+</html>
