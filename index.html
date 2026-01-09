@@ -230,6 +230,16 @@
         </div>
       </section>
     </main>
+<script>
+window.onerror = function (msg, url, line, col, error) {
+  alert(
+    'ERROR JS:\n' +
+    msg + '\n' +
+    'Línea: ' + line + '\n' +
+    'Col: ' + col
+  );
+};
+</script>
 
     <!-- LIBRERÍAS -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
