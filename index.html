@@ -370,7 +370,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
           const input = document.createElement('input');
           input.type = 'number';
           input.style.width = '100%';
-          input.value = val ?? '';
+          input.value = (val !== undefined && val !== null) ? val : '';
           if (readOnly) {
             input.readOnly = true;
             input.style.background = '#f5f5f5';
@@ -836,7 +836,7 @@ rows.push(['', '', 'Hora:', hora]);
     const inputs = tr.querySelectorAll('input');
 
     rows.push([
-      inputs[2]?.value || '', // Inventario
+(inputs[2] && inputs[2].value) || '', // Inventario
       inputs[0]?.value || '', // Producto
       select?.value || '',    // Presentación
       inputs[5]?.value || ''  // Reenvasado
