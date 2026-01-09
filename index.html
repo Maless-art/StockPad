@@ -1001,24 +1001,26 @@ function cargarReempaqueLS() {
 
 
 
-window.addEventListener('beforeunload', () =>
-  localStorage.setItem(
-    'reempaque',
-    JSON.stringify(
-      [...document.querySelectorAll('#reempaque-table tbody tr')].map(tr => {
-        const i = tr.querySelectorAll('input');
-        return {
-          cantidad: i[0]?.value || '',
-          producto: i[1]?.value || '',
-          envases: i[2]?.value || '',
-          etiquetasCant: i[3]?.value || '',
-          etiquetasTipo: i[4]?.value || '',
-          desechados: i[5]?.value || ''
-        };
-      })
-    )
-  )
-);
+window.addEventListener('beforeunload', function () {
+  var filas = [];
+  var trs = document.querySelectorAll('#reempaque-table tbody tr');
+
+  trs.forEach(function (tr) {
+    var i = tr.querySelectorAll('input');
+
+    filas.push({
+      cantidad:   (i[0] && i[0].value) ? i[0].value : '',
+      producto:   (i[1] && i[1].value) ? i[1].value : '',
+      envases:    (i[2] && i[2].value) ? i[2].value : '',
+      etiquetasCant: (i[3] && i[3].value) ? i[3].value : '',
+      etiquetasTipo: (i[4] && i[4].value) ? i[4].value : '',
+      desechados: (i[5] && i[5].value) ? i[5].value : ''
+    });
+  });
+
+  localStorage.setItem('reempaque', JSON.stringify(filas));
+});
+
 // === BOOT REEMPAQUE ===
 document.getElementById('registrar-reempaque').onclick = () => {
   guardarReempaqueLS();
