@@ -2,11 +2,13 @@
   "name": "StockPad",
   "short_name": "StockPad",
   "description": "Control de inventario y procesos relacionados",
-  "start_url": "./index.html",
+  "start_url": "/"
+  "scope": "/"
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#b71c1c",
   "orientation": "portrait",
+  "id": "stockpad-v2"
   "icons": [
     {
       "src": "icon-192.png",
