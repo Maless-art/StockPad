@@ -385,7 +385,11 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 
 
         // Inventario (readonly)
-        makeInput(data.inventario ?? '0', true);
+       makeInput(
+  (data.inventario !== undefined && data.inventario !== null) ? data.inventario : '0',
+  true
+);
+
 
         // Conversión
         makeInput(data.conversion ?? '');
@@ -831,20 +835,24 @@ rows.push(['', '', 'Hora:', hora]);
     'Reenvasado'
   ]);
 
-  // DATOS
-  filas.forEach(tr => {
-    const select = tr.querySelector('select');
-    const inputs = tr.querySelectorAll('input');
+ // DATOS
+filas.forEach(function (tr) {
+  var select = tr.querySelector('select');
+  var inputs = tr.querySelectorAll('input');
 
-    rows.push([
-(inputs[2] && inputs[2].value !== undefined && inputs[2].value !== null)
-  ? inputs[2].value
-  : '',
-      inputs[0]?.value || '', // Producto
-      select?.value || '',    // Presentación
-      inputs[5]?.value || ''  // Reenvasado
-    ]);
-  });
+  rows.push([
+    (inputs[2] && inputs[2].value !== undefined && inputs[2].value !== null)
+      ? inputs[2].value
+      : '',
+
+    (inputs[0] && inputs[0].value) ? inputs[0].value : '', // Producto
+
+    (select && select.value) ? select.value : '',          // Presentación
+
+    (inputs[5] && inputs[5].value) ? inputs[5].value : ''  // Reenvasado
+  ]);
+});
+
 
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(rows);
