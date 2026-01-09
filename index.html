@@ -802,7 +802,8 @@ function exportarReenvaseExcel() {
     alert('⚠️ No hay datos para exportar.');
     return;
   }
-const por = document.getElementById('reenvase-por')?.value || '';
+const porEl = document.getElementById('reenvasado-por');
+const por = porEl && porEl.value ? porEl.value : '';
 
   const hoy = new Date();
   const fecha = hoy.toISOString().slice(0, 10);
