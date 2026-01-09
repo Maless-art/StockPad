@@ -381,7 +381,8 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         };
 
         // Ingreso
-        makeInput(data.ingreso ?? '');
+       makeInput((data.ingreso !== undefined && data.ingreso !== null) ? data.ingreso : '');
+
 
         // Inventario (readonly)
         makeInput(data.inventario ?? '0', true);
@@ -836,7 +837,9 @@ rows.push(['', '', 'Hora:', hora]);
     const inputs = tr.querySelectorAll('input');
 
     rows.push([
-(inputs[2] && inputs[2].value) || '', // Inventario
+(inputs[2] && inputs[2].value !== undefined && inputs[2].value !== null)
+  ? inputs[2].value
+  : '',
       inputs[0]?.value || '', // Producto
       select?.value || '',    // Presentación
       inputs[5]?.value || ''  // Reenvasado
