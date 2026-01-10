@@ -1018,15 +1018,14 @@ const acumulados = JSON.parse(localStorage.getItem('reempaqueAcumulado')) || {};
       <td><input type="number" value="${f.desechados || ''}"></td>
     `;
 
-const producto = f.producto?.trim();
 
-if (  producto &&  acumulados[producto] !== undefined &&
-  f.ultimaRegistrada !== undefined
-) {
-  tr.querySelector('.acumulado').textContent = acumulados[producto];
+if (f.confirmada === true) {
+  tr.querySelector('.acumulado').textContent =
+    acumulados[f.producto] ?? '0';
 } else {
   tr.querySelector('.acumulado').textContent = '0';
 }
+
 
 
     tbody.appendChild(tr);
