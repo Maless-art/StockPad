@@ -162,6 +162,7 @@
       <tr>
         <th>Cantidad</th>
         <th>Producto</th>
+        <th>Acumulado</th>
         <th>Envases</th>
         <th>Etiquetas (Cant.)</th>
         <th>Etiquetas (Tipo)</th>
@@ -310,7 +311,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
       };
 
       // ============================================================
-      // ✅ TANQUES REENVASE (solución real: cada tanque guarda sus filas)
+      // ✅ TANQUES REENVASE (cada tanque guarda sus filas)
       // ============================================================
       let tanqueActivo = 1;
       let tanques = { 1: [] };
@@ -982,6 +983,18 @@ function guardarReempaqueLS() {
   // guardar ambos
   localStorage.setItem(LS_REEMPAQUE_KEY, JSON.stringify(filas));
   localStorage.setItem('reempaqueAcumulado', JSON.stringify(acumulado));
+const acumulados = JSON.parse(localStorage.getItem('reempaqueAcumulado')) || {};
+
+document.querySelectorAll('#reempaque-table tbody tr').forEach(tr => {
+  const inputs = tr.querySelectorAll('input');
+  const producto = inputs[1]?.value?.trim();
+  const cell = tr.querySelector('.acumulado');
+
+  if (producto && cell) {
+    cell.textContent = acumulados[producto] || 0;
+  }
+});
+
 }
 
 function cargarReempaqueLS() {
@@ -991,17 +1004,25 @@ function cargarReempaqueLS() {
   const filas = JSON.parse(raw);
   const tbody = document.querySelector('#reempaque-table tbody');
   tbody.innerHTML = '';
-
+const acumulados = JSON.parse(localStorage.getItem('reempaqueAcumulado')) || {};
   filas.forEach(f => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><input type="number" value="${f.cantidad || ''}"></td>
       <td><input type="text" value="${f.producto || ''}"></td>
+      <td class="acumulado">0</td>
       <td><input type="number" value="${f.envases || ''}"></td>
       <td><input type="number" value="${f.etiquetasCant || ''}"></td>
       <td><input type="text" value="${f.etiquetasTipo || ''}"></td>
       <td><input type="number" value="${f.desechados || ''}"></td>
     `;
+
+const producto = f.producto?.trim();
+
+if (producto && acumulados[producto] !== undefined) {
+  tr.querySelector('.acumulado').textContent = acumulados[producto];
+}
+
     tbody.appendChild(tr);
   });
 }
