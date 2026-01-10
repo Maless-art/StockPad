@@ -488,9 +488,7 @@ function cargarReenvaseLS() {
         cargarTanque(nuevo);
       }
 
-      // ============================================================
-      // Esquemas + addRow
-      // ============================================================
+      
       const tableSchemas = {
         'reenvase-table': ['select','number','number','number','number','number'],
         'reempaque-table': ['number','text','number','number','text','number'],
@@ -512,28 +510,39 @@ function cargarReenvaseLS() {
         const tbody = document.querySelector(`#${tableId} tbody`);
         const schema = tableSchemas[tableId];
         const tr = document.createElement('tr');
+        const ACUMULADO_INDEX = (tableId === 'reempaque-table') ? 2 : -1;
+
 
         schema.forEach((type, index) => {
-          const td = document.createElement('td');
-          const input = document.createElement('input');
-          input.type = type;
-          input.style.width = '100%';
+  const td = document.createElement('td');
 
-          if (tableId === 'devolucion-table') {
-            if (index === 1) {
-              input.addEventListener('change', () => {
-                if (input.value !== '') input.readOnly = true;
-              });
-            }
-            if (index === 2) {
-              input.readOnly = true;
-              input.style.background = '#f5f5f5';
-            }
-          }
+   if (index === ACUMULADO_INDEX) {
+    td.className = 'acumulado';
+    td.textContent = '0';
+    tr.appendChild(td);
+    return;
+  }
 
-          td.appendChild(input);
-          tr.appendChild(td);
-        });
+  const input = document.createElement('input');
+  input.type = type;
+  input.style.width = '100%';
+
+  if (tableId === 'devolucion-table') {
+    if (index === 1) {
+      input.addEventListener('change', () => {
+        if (input.value !== '') input.readOnly = true;
+      });
+    }
+    if (index === 2) {
+      input.readOnly = true;
+      input.style.background = '#f5f5f5';
+    }
+  }
+
+  td.appendChild(input);
+  tr.appendChild(td);
+});
+
 
         tbody.appendChild(tr);
 
@@ -544,9 +553,6 @@ function cargarReenvaseLS() {
         }
       }
 
-      // ============================================================
-      // Reenvase: confirmar ingreso / conversion / reiniciar
-      // ============================================================
       function confirmarIngresoReenvase() {
   let huboCambio = false;
 
