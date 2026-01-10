@@ -491,7 +491,7 @@ function cargarReenvaseLS() {
       
       const tableSchemas = {
         'reenvase-table': ['select','number','number','number','number','number'],
-        'reempaque-table': ['number','text',null,'number','number','text','number'],
+        'reempaque-table': ['number','text','acumulado','number','number','text','number']
         'devolucion-table': ['number','number','number','text','number','number']
       };
 
@@ -512,26 +512,17 @@ function cargarReenvaseLS() {
         const tr = document.createElement('tr');
         const ACUMULADO_INDEX = (tableId === 'reempaque-table') ? 2 : -1;
 
+if (type === 'acumulado') {
+  td.className = 'acumulado';
+  td.textContent = '0';
+  tr.appendChild(td);
+  return;
+}
 
-        schema.forEach((type, index) => {
-  const td = document.createElement('td');
+const input = document.createElement('input');
+input.type = type;
+input.style.width = '100%';
 
-   if (index === ACUMULADO_INDEX) {
-    td.className = 'acumulado';
-    td.textContent = '0';
-    tr.appendChild(td);
-    return;
-  }
-
-  const input = document.createElement('input');
-  input.type = type;
-  input.style.width = '100%';
-
-  if (tableId === 'devolucion-table') {
-    if (index === 1) {
-      input.addEventListener('change', () => {
-        if (input.value !== '') input.readOnly = true;
-      });
     }
     if (index === 2) {
       input.readOnly = true;
