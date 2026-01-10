@@ -1020,9 +1020,14 @@ const acumulados = JSON.parse(localStorage.getItem('reempaqueAcumulado')) || {};
 
 const producto = f.producto?.trim();
 
-if (producto && acumulados[producto] !== undefined) {
+if (  producto &&  acumulados[producto] !== undefined &&
+  f.ultimaRegistrada !== undefined
+) {
   tr.querySelector('.acumulado').textContent = acumulados[producto];
+} else {
+  tr.querySelector('.acumulado').textContent = '0';
 }
+
 
     tbody.appendChild(tr);
   });
