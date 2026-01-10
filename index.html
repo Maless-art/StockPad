@@ -607,10 +607,8 @@ function cargarReenvaseLS() {
     conversionInput.value = '';
   });
 
-  // guardar acumulado del tanque
-  acumuladoPorTanque[tanqueActivo] = acumulado;
-
-  // pintar reenvasado en TODAS las filas
+   acumuladoPorTanque[tanqueActivo] = acumulado;
+  
   filas.forEach(tr => {
     const rInput = tr.querySelector('td:nth-child(7) input');
     rInput.value = acumulado;
@@ -622,18 +620,19 @@ function cargarReenvaseLS() {
    function reiniciarInventarioReenvase() {
   if (!confirm('⚠️ Esto reiniciará completamente el reenvase y eliminará todas las filas del tanque actual. ¿Continuar?')) return;
 
-        asegurarTanque(tanqueActivo);
-        tanques[tanqueActivo] = [];
-        acumuladoPorTanque[tanqueActivo] = 0;
+  asegurarTanque(tanqueActivo);
+  tanques[tanqueActivo] = [];
+  acumuladoPorTanque[tanqueActivo] = 0;
 
-        const tbody = document.querySelector('#reenvase-table tbody');
-        tbody.innerHTML = '';
-      }
 
-      // ============================================================
-      // Devolución: ingreso / retiros / reset / LS / export
-      // ============================================================
-      function confirmarIngreso() {
+  localStorage.removeItem(`reenvase_${tanqueActivo}`);
+  localStorage.removeItem(`acumuladoReenvase_${tanqueActivo}`);
+
+  const tbody = document.querySelector('#reenvase-table tbody');
+  tbody.innerHTML = '';
+}
+
+        function confirmarIngreso() {
         let huboCambio = false;
 
         document.querySelectorAll('#devolucion-table tbody tr').forEach(tr => {
@@ -795,7 +794,7 @@ window.addEventListener('beforeunload', function () {
 });
 
 
-    </script>
+</script>
 <script>
 function reenvaseBloqueado() {
   return !appState.devolucionEditada;
