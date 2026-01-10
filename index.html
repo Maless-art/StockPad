@@ -88,7 +88,7 @@
    <header class="app-header">
 <div style="display:flex; align-items:center; gap:6px;">
   <img src="icon-192.png" alt="StockPad" class="header-logo left">
-  <span style="font-size:12px; color:#666; font-weight:600;">v1.0</span>
+  <span style="font-size:12px; color:#666; font-weight:600;">v1.0.1</span>
 </div>
 
 
@@ -890,6 +890,8 @@ function reiniciarReempaque() {
   if (tbody) tbody.innerHTML = '';
 
   localStorage.removeItem('reempaque');
+  localStorage.removeItem('reempaqueAcumulado');
+
 
   alert('✅ Reempaque reiniciado');
 }
@@ -959,26 +961,26 @@ function guardarReempaqueLS() {
   // 🔹 acumulado por producto
   var acumulado = JSON.parse(localStorage.getItem('reempaqueAcumulado')) || {};
 
-  trs.forEach(function (tr) {
-    var i = tr.querySelectorAll('input');
+trs.forEach(function (tr) {
+  var i = tr.querySelectorAll('input');
 
-    var cantidad = Number(i[0]?.value) || 0;
-    var producto = i[1]?.value?.trim();
+  var cantidad = Number(i[0]?.value) || 0;
+  var producto = i[1]?.value?.trim();
 
-    // acumular por producto
-    if (cantidad > 0 && producto) {
-      acumulado[producto] = (acumulado[producto] || 0) + cantidad;
-    }
+  // leer lo último registrado de esta fila (desde storage)
+  var ultima = tr.dataset.ultimaRegistrada
+    ? Number(tr.dataset.ultimaRegistrada)
+    : null;
 
-    filas.push({
-      cantidad: cantidad || '',
-      producto: producto || '',
-      envases: (i[2] && i[2].value) ? i[2].value : '',
-      etiquetasCant: (i[3] && i[3].value) ? i[3].value : '',
-      etiquetasTipo: (i[4] && i[4].value) ? i[4].value : '',
-      desechados: (i[6] && i[6].value) ? i[6].value : ''
-    });
-  });
+  // sumar SOLO si se presiona Registrar (siempre suma la cantidad actual)
+  if (cantidad > 0 && producto) {
+    acumulado[producto] = (acumulado[producto] || 0) + cantidad;
+    tr.dataset.ultimaRegistrada = cantidad; // marcar como ya registrado
+  }
+});
+
+localStorage.setItem('reempaqueAcumulado', JSON.stringify(acumulado));
+
 
   // guardar ambos
   localStorage.setItem(LS_REEMPAQUE_KEY, JSON.stringify(filas));
