@@ -1056,9 +1056,10 @@ window.addEventListener('beforeunload', function () {
 
 // === BOOT REEMPAQUE ===
 document.getElementById('registrar-reempaque').onclick = () => {
-  guardarReempaqueLS();
+  registrarReempaque();
   alert('✅ Reempaque registrado');
 };
+
 
 window.addEventListener('load', cargarReempaqueLS);
 document.querySelector('#reempaque-table').addEventListener('input', guardarReempaqueLS);
