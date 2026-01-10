@@ -511,6 +511,11 @@ function cargarReenvaseLS() {
         const schema = tableSchemas[tableId];
         const tr = document.createElement('tr');
         const ACUMULADO_INDEX = (tableId === 'reempaque-table') ? 2 : -1;
+tr.addEventListener('input', () => {
+  const acc = tr.querySelector('.acumulado');
+  if (acc) acc.textContent = '0';
+});
+
 
 schema.forEach((type, index) => {
   const td = document.createElement('td');
