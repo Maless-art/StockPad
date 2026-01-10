@@ -629,6 +629,7 @@ function cargarReenvaseLS() {
   localStorage.removeItem(`acumuladoReenvase_${tanqueActivo}`);
 
   const tbody = document.querySelector('#reenvase-table tbody');
+  localStorage.removeItem('reenvaseData');
   tbody.innerHTML = '';
 }
 
