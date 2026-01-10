@@ -991,16 +991,6 @@ localStorage.setItem('reempaqueAcumulado', JSON.stringify(acumulado));
   localStorage.setItem('reempaqueAcumulado', JSON.stringify(acumulado));
 const acumulados = JSON.parse(localStorage.getItem('reempaqueAcumulado')) || {};
 
-document.querySelectorAll('#reempaque-table tbody tr').forEach(tr => {
-  const inputs = tr.querySelectorAll('input');
-  const producto = inputs[1]?.value?.trim();
-  const cell = tr.querySelector('.acumulado');
-
-  if (producto && cell) {
-    cell.textContent = acumulados[producto] || 0;
-  }
-});
-
 }
 
 function cargarReempaqueLS() {
