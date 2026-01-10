@@ -1048,6 +1048,41 @@ window.addEventListener('beforeunload', function () {
   });
 
 });
+function registrarReempaque() {
+  const tbody = document.querySelector('#reempaque-table tbody');
+  const filas = Array.from(tbody.querySelectorAll('tr'));
+
+  const acumulados =
+    JSON.parse(localStorage.getItem('reempaqueAcumulado')) || {};
+
+  const data = [];
+
+  filas.forEach(tr => {
+    const inputs = tr.querySelectorAll('input');
+    const cantidad = Number(inputs[0]?.value) || 0;
+    const producto = inputs[1]?.value?.trim();
+
+    if (!producto || cantidad <= 0) return;
+
+    acumulados[producto] = (acumulados[producto] || 0) + cantidad;
+    tr.querySelector('.acumulado').textContent = acumulados[producto];
+
+    data.push({
+      cantidad,
+      producto,
+      envases: Number(inputs[3]?.value) || 0,
+      etiquetasCant: Number(inputs[4]?.value) || 0,
+      etiquetasTipo: inputs[5]?.value || '',
+      desechados: Number(inputs[6]?.value) || 0,
+      confirmada: true
+    });
+
+    inputs[0].value = '';
+  });
+
+  localStorage.setItem('reempaque', JSON.stringify(data));
+  localStorage.setItem('reempaqueAcumulado', JSON.stringify(acumulados));
+}
 
 // === BOOT REEMPAQUE ===
 document.getElementById('registrar-reempaque').onclick = () => {
