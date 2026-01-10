@@ -881,13 +881,7 @@ filas.forEach(function (tr) {
 
   XLSX.writeFile(wb, `reenvase_${fecha}.xls`);
 }
-
    
-
-
-
-/* ===== FIX DEFINITIVO REEMPAQUE ===== */
-
 function reiniciarReempaque() {
   if (!confirm('⚠️ Esto borrará el reempaque completo. ¿Continuar?')) return;
 
@@ -961,20 +955,33 @@ function guardarReempaqueLS() {
   var filas = [];
   var trs = document.querySelectorAll('#reempaque-table tbody tr');
 
+  // 🔹 acumulado por producto
+  var acumulado = JSON.parse(localStorage.getItem('reempaqueAcumulado')) || {};
+
   trs.forEach(function (tr) {
     var i = tr.querySelectorAll('input');
 
+    var cantidad = Number(i[0]?.value) || 0;
+    var producto = i[1]?.value?.trim();
+
+    // acumular por producto
+    if (cantidad > 0 && producto) {
+      acumulado[producto] = (acumulado[producto] || 0) + cantidad;
+    }
+
     filas.push({
-      cantidad:   (i[0] && i[0].value) ? i[0].value : '',
-      producto:   (i[1] && i[1].value) ? i[1].value : '',
-      envases:    (i[2] && i[2].value) ? i[2].value : '',
+      cantidad: cantidad || '',
+      producto: producto || '',
+      envases: (i[2] && i[2].value) ? i[2].value : '',
       etiquetasCant: (i[3] && i[3].value) ? i[3].value : '',
       etiquetasTipo: (i[4] && i[4].value) ? i[4].value : '',
       desechados: (i[5] && i[5].value) ? i[5].value : ''
     });
   });
 
+  // guardar ambos
   localStorage.setItem(LS_REEMPAQUE_KEY, JSON.stringify(filas));
+  localStorage.setItem('reempaqueAcumulado', JSON.stringify(acumulado));
 }
 
 function cargarReempaqueLS() {
@@ -1018,7 +1025,6 @@ window.addEventListener('beforeunload', function () {
     });
   });
 
-  localStorage.setItem('reempaque', JSON.stringify(filas));
 });
 
 // === BOOT REEMPAQUE ===
