@@ -88,7 +88,7 @@
    <header class="app-header">
 <div style="display:flex; align-items:center; gap:6px;">
   <img src="icon-192.png" alt="StockPad" class="header-logo left">
-  <span style="font-size:12px; color:#666; font-weight:600;">v1.0.1</span>
+  <span style="font-size:12px; color:#666; font-weight:600;">v1.0.2</span>
 </div>
 
 
@@ -162,9 +162,8 @@
       <tr>
         <th>Cantidad</th>
         <th>Producto</th>
-        <th>Acumulado</th>
-        <th>Envases</th>
-        <th>Etiquetas (Cant.)</th>
+        <th>Envases<br><span style="font-size:11px; color:#666;">In / Acum</span></th>
+        <th>Etiquetas<br><span style="font-size:11px; color:#666;">In / Acum</span></th>
         <th>Etiquetas (Tipo)</th>
         <th>Desechados</th>
       </tr>
@@ -491,65 +490,89 @@ function cargarReenvaseLS() {
       
       const tableSchemas = {
         'reenvase-table': ['select','number','number','number','number','number'],
-        'reempaque-table': ['number','text','acumulado','number','number','text','number'],
+        'reempaque-table': ['number','text','number','number','text','number'],
         'devolucion-table': ['number','number','number','text','number','number']
       };
 
 
       function addRow(tableId) {
-        // REENVASE: fila al tanque actual
-        if (tableId === 'reenvase-table') {
-          const tbody = document.querySelector('#reenvase-table tbody');
-          tbody.appendChild(pintarFilaReenvase({ reenvasado:      
-          String(acumuladoPorTanque[tanqueActivo] || 0) }));
-          guardarTanqueActivo();
-          return;
-        }
-
-        // otros
-        const tbody = document.querySelector(`#${tableId} tbody`);
-        const schema = tableSchemas[tableId];
-        const tr = document.createElement('tr');
-        const ACUMULADO_INDEX = (tableId === 'reempaque-table') ? 2 : -1;
-tr.addEventListener('input', () => {
-  const acc = tr.querySelector('.acumulado');
-  if (acc) acc.textContent = '0';
-});
-
-
-schema.forEach((type, index) => {
-  const td = document.createElement('td');
-
-  if (type === 'acumulado') {
-    td.className = 'acumulado';
-    td.textContent = '0';
-    tr.appendChild(td);
+  // ===== REENVASE =====
+  if (tableId === 'reenvase-table') {
+    const tbody = document.querySelector('#reenvase-table tbody');
+    tbody.appendChild(
+      pintarFilaReenvase({
+        reenvasado: String(acumuladoPorTanque[tanqueActivo] || 0)
+      })
+    );
+    guardarTanqueActivo();
     return;
   }
 
-  const input = document.createElement('input');
-  input.type = type;
-  input.style.width = '100%';
+  // ===== REEMPAQUE =====
+  if (tableId === 'reempaque-table') {
+    const tbody = document.querySelector('#reempaque-table tbody');
+    const tr = document.createElement('tr');
 
-  if (tableId === 'devolucion-table' && index === 2) {
-    input.readOnly = true;
-    input.style.background = '#f5f5f5';
+    tr.innerHTML = `
+      <td><input type="number"></td>
+      <td><input type="text"></td>
+
+      <td>
+        <div style="display:flex; gap:6px;">
+          <input type="number" class="env-in" style="width:50%;">
+          <input type="number" class="env-acum" value="0" style="width:50%; background:#f5f5f5;" readonly>
+        </div>
+      </td>
+
+      <td>
+        <div style="display:flex; gap:6px;">
+          <input type="number" class="eti-in" style="width:50%;">
+          <input type="number" class="eti-acum" value="0" style="width:50%; background:#f5f5f5;" readonly>
+        </div>
+      </td>
+
+      <td><input type="text"></td>
+
+      <td>
+        <div style="display:flex; gap:6px;">
+          <input type="number" class="des-in" style="width:50%;">
+          <input type="number" class="des-acum" value="0" style="width:50%; background:#f5f5f5;" readonly>
+        </div>
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+    return;
   }
 
-  td.appendChild(input);
-  tr.appendChild(td);
-});
+  // ===== OTROS (schema) =====
+  const tbody = document.querySelector(`#${tableId} tbody`);
+  const schema = tableSchemas[tableId];
+  const tr = document.createElement('tr');
 
+  schema.forEach((type, index) => {
+    const td = document.createElement('td');
+    const input = document.createElement('input');
+    input.type = type;
+    input.style.width = '100%';
 
+    if (tableId === 'devolucion-table' && index === 2) {
+      input.readOnly = true;
+      input.style.background = '#f5f5f5';
+    }
 
-        tbody.appendChild(tr);
+    td.appendChild(input);
+    tr.appendChild(td);
+  });
 
-        if (tableId === 'devolucion-table') {
-          const inputs = tr.querySelectorAll('input');
-          inputs[2].value = Number(inputs[1].value) || 0;
-          tr.dataset.stockInit = '1';
-        }
-      }
+  tbody.appendChild(tr);
+
+  if (tableId === 'devolucion-table') {
+    const inputs = tr.querySelectorAll('input');
+    inputs[2].value = Number(inputs[1].value) || 0;
+    tr.dataset.stockInit = '1';
+  }
+}
 
       function confirmarIngresoReenvase() {
   let huboCambio = false;
@@ -929,14 +952,21 @@ function exportarReempaqueExcel() {
   ]);
 
   filas.forEach(function (tr) {
-  var i = tr.querySelectorAll('input');
+  const cantidad = tr.querySelector('td:nth-child(1) input')?.value || '';
+  const producto = tr.querySelector('td:nth-child(2) input')?.value || '';
+
+  const envasesAcum = tr.querySelector('.env-acum')?.value || '0';
+  const etiquetasAcum = tr.querySelector('.eti-acum')?.value || '0';
+  const etiquetasTipo = tr.querySelector('td:nth-child(5) input')?.value || '';
+  const desechadosAcum = tr.querySelector('.des-acum')?.value || '0';
+
   rows.push([
-    (i[0] && i[0].value) ? i[0].value : '',
-    (i[1] && i[1].value) ? i[1].value : '',
-    (i[2] && i[2].value) ? i[2].value : '',
-    (i[3] && i[3].value) ? i[3].value : '',
-    (i[4] && i[4].value) ? i[4].value : '',
-    (i[5] && i[5].value) ? i[5].value : ''
+    cantidad,
+    producto,
+    envasesAcum,     // ✅ ESTE ES EL ACUMULADO DE ENVASES
+    etiquetasAcum,
+    etiquetasTipo,
+    desechadosAcum
   ]);
 });
 
@@ -957,41 +987,74 @@ function exportarReempaqueExcel() {
   XLSX.writeFile(wb, `reempaque_${fecha}.xls`);
 }
 const LS_REEMPAQUE_KEY = 'reempaque';
+function registrarReempaque() {
+  const tbody = document.querySelector('#reempaque-table tbody');
+  const filas = Array.from(tbody.querySelectorAll('tr'));
+  const data = [];
 
-function guardarReempaqueLS() {
-  var filas = [];
-  var trs = document.querySelectorAll('#reempaque-table tbody tr');
+  filas.forEach(tr => {
+    const cantidad = Number(tr.querySelector('td:nth-child(1) input')?.value) || 0;
+    const prodEl = tr.querySelector('td:nth-child(2) input');
+    const producto = prodEl ? prodEl.value.trim() : '';
 
-  // 🔹 acumulado por producto
-  var acumulado = JSON.parse(localStorage.getItem('reempaqueAcumulado')) || {};
+    // ===== ENVASES =====
+    const envIn = tr.querySelector('.env-in');
+    const envAcum = tr.querySelector('.env-acum');
 
-trs.forEach(function (tr) {
-  var i = tr.querySelectorAll('input');
+    if (envIn && envAcum) {
+      const ingreso = Number(envIn.value) || 0;
+      const acumuladoActual = Number(envAcum.value) || 0;
 
-  var cantidad = Number(i[0]?.value) || 0;
-  var producto = i[1]?.value?.trim();
+      if (ingreso > 0) {
+        envAcum.value = acumuladoActual + ingreso;
+        envIn.placeholder = ingreso;
+        envIn.value = '';
+      }
+    }
 
-  // leer lo último registrado de esta fila (desde storage)
-  var ultima = tr.dataset.ultimaRegistrada
-    ? Number(tr.dataset.ultimaRegistrada)
-    : null;
+    // ===== ETIQUETAS =====
+    const etiIn = tr.querySelector('.eti-in');
+    const etiAcum = tr.querySelector('.eti-acum');
 
-  // sumar SOLO si se presiona Registrar (siempre suma la cantidad actual)
-  if (cantidad > 0 && producto) {
-    acumulado[producto] = (acumulado[producto] || 0) + cantidad;
-    tr.dataset.ultimaRegistrada = cantidad; // marcar como ya registrado
-  }
-});
+    if (etiIn && etiAcum) {
+      const ingresoEti = Number(etiIn.value) || 0;
+      const acumuladoEti = Number(etiAcum.value) || 0;
 
-localStorage.setItem('reempaqueAcumulado', JSON.stringify(acumulado));
+      if (ingresoEti > 0) {
+        etiAcum.value = acumuladoEti + ingresoEti;
+        etiIn.placeholder = ingresoEti;
+        etiIn.value = '';
+      }
+    }
 
+    // ===== DESECHADOS =====
+    const desIn = tr.querySelector('.des-in');
+    const desAcum = tr.querySelector('.des-acum');
 
-  // guardar ambos
-  localStorage.setItem(LS_REEMPAQUE_KEY, JSON.stringify(filas));
-  localStorage.setItem('reempaqueAcumulado', JSON.stringify(acumulado));
-const acumulados = JSON.parse(localStorage.getItem('reempaqueAcumulado')) || {};
+    if (desIn && desAcum) {
+      const ingresoDes = Number(desIn.value) || 0;
+      const acumuladoDes = Number(desAcum.value) || 0;
 
+      if (ingresoDes > 0) {
+        desAcum.value = acumuladoDes + ingresoDes;
+        desIn.placeholder = ingresoDes;
+        desIn.value = '';
+      }
+    }
+
+    data.push({
+      cantidad,
+      producto,
+      envasesAcum: envAcum ? Number(envAcum.value) || 0 : 0,
+      etiquetasAcum: etiAcum ? Number(etiAcum.value) || 0 : 0,
+      etiquetasTipo: tr.querySelector('td:nth-child(5) input')?.value || '',
+      desechadosAcum: desAcum ? Number(desAcum.value) || 0 : 0
+    });
+  });
+
+  localStorage.setItem('reempaque', JSON.stringify(data));
 }
+
 
 function cargarReempaqueLS() {
   const raw = localStorage.getItem('reempaque');
@@ -1000,29 +1063,34 @@ function cargarReempaqueLS() {
   const filas = JSON.parse(raw);
   const tbody = document.querySelector('#reempaque-table tbody');
   tbody.innerHTML = '';
-const acumulados = JSON.parse(localStorage.getItem('reempaqueAcumulado')) || {};
+
   filas.forEach(f => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><input type="number" value="${f.cantidad || ''}"></td>
       <td><input type="text" value="${f.producto || ''}"></td>
-      <td class="acumulado">0</td>
-      <td><input type="number" value="${f.envases || ''}"></td>
-      <td><input type="number" value="${f.etiquetasCant || ''}"></td>
+      <td>
+  <div style="display:flex; gap:6px;">
+    <input type="number" class="env-in" value="" style="width:50%;">
+    <input type="number" class="env-acum" value="${f.envasesAcum || 0}" style="width:50%; background:#f5f5f5;" readonly>
+  </div>
+</td>
+      <td>
+  <div style="display:flex; gap:6px;">
+    <input type="number" class="eti-in" value="" style="width:50%;">
+    <input type="number" class="eti-acum" value="${f.etiquetasAcum || 0}" style="width:50%; background:#f5f5f5;" readonly>
+  </div>
+</td>
+
       <td><input type="text" value="${f.etiquetasTipo || ''}"></td>
-      <td><input type="number" value="${f.desechados || ''}"></td>
+      <td>
+  <div style="display:flex; gap:6px;">
+    <input type="number" class="des-in" value="" style="width:50%;">
+    <input type="number" class="des-acum" value="${f.desechadosAcum || 0}" style="width:50%; background:#f5f5f5;" readonly>
+  </div>
+</td>
+
     `;
-
-
-if (f.confirmada === true) {
-  tr.querySelector('.acumulado').textContent =
-    acumulados[f.producto] ?? '0';
-} else {
-  tr.querySelector('.acumulado').textContent = '0';
-}
-
-
-
     tbody.appendChild(tr);
   });
 }
@@ -1042,7 +1110,8 @@ window.addEventListener('beforeunload', function () {
       envases:    (i[2] && i[2].value) ? i[2].value : '',
       etiquetasCant: (i[3] && i[3].value) ? i[3].value : '',
       etiquetasTipo: (i[4] && i[4].value) ? i[4].value : '',
-      desechados: (i[6] && i[6].value) ? i[6].value : ''
+      desechados: (i[5] && i[5].value) ? i[5].value : ''
+
 
     });
   });
@@ -1051,38 +1120,74 @@ window.addEventListener('beforeunload', function () {
 function registrarReempaque() {
   const tbody = document.querySelector('#reempaque-table tbody');
   const filas = Array.from(tbody.querySelectorAll('tr'));
-
-  const acumulados =
-    JSON.parse(localStorage.getItem('reempaqueAcumulado')) || {};
-
   const data = [];
 
   filas.forEach(tr => {
-    const inputs = tr.querySelectorAll('input');
-    const cantidad = Number(inputs[0]?.value) || 0;
-    const producto = inputs[1]?.value?.trim();
+  const cantidad = Number(tr.querySelector('td:nth-child(1) input')?.value) || 0;
+  const prodEl = tr.querySelector('td:nth-child(2) input');
+const producto = prodEl ? prodEl.value.trim() : '';
 
-    if (!producto || cantidad <= 0) return;
 
-    acumulados[producto] = (acumulados[producto] || 0) + cantidad;
-    tr.querySelector('.acumulado').textContent = acumulados[producto];
+ // ===== ENVASES =====
+const envIn = tr.querySelector('.env-in');
+const envAcum = tr.querySelector('.env-acum');
 
-    data.push({
-      cantidad,
-      producto,
-      envases: Number(inputs[3]?.value) || 0,
-      etiquetasCant: Number(inputs[4]?.value) || 0,
-      etiquetasTipo: inputs[5]?.value || '',
-      desechados: Number(inputs[6]?.value) || 0,
-      confirmada: true
-    });
+if (envIn && envAcum) {
+  const ingreso = Number(envIn.value) || 0;
+  const acumuladoActual = Number(envAcum.value) || 0;
 
-    inputs[0].value = '';
-  });
-
-  localStorage.setItem('reempaque', JSON.stringify(data));
-  localStorage.setItem('reempaqueAcumulado', JSON.stringify(acumulados));
+  if (ingreso > 0) {
+    envAcum.value = acumuladoActual + ingreso;
+    envIn.placeholder = ingreso;
+    envIn.value = '';
+  }
 }
+
+  // ===== ETIQUETAS =====
+const etiIn = tr.querySelector('.eti-in');
+const etiAcum = tr.querySelector('.eti-acum');
+
+if (etiIn && etiAcum) {
+  const ingresoEti = Number(etiIn.value) || 0;
+  const acumuladoEti = Number(etiAcum.value) || 0;
+
+  if (ingresoEti > 0) {
+    etiAcum.value = acumuladoEti + ingresoEti;
+    etiIn.placeholder = ingresoEti;
+    etiIn.value = '';
+  }
+}
+// ===== DESECHADOS =====
+const desIn = tr.querySelector('.des-in');
+const desAcum = tr.querySelector('.des-acum');
+
+if (desIn && desAcum) {
+  const ingresoDes = Number(desIn.value) || 0;
+  const acumuladoDes = Number(desAcum.value) || 0;
+
+  if (ingresoDes > 0) {
+    desAcum.value = acumuladoDes + ingresoDes;
+    desIn.placeholder = ingresoDes;
+    desIn.value = '';
+  }
+}
+
+
+  data.push({
+  cantidad,
+  producto,
+  envasesAcum: envAcum ? Number(envAcum.value) || 0 : 0,
+  etiquetasAcum: etiAcum ? Number(etiAcum.value) || 0 : 0,
+  etiquetasTipo: tr.querySelector('td:nth-child(5) input')?.value || '',
+  desechadosAcum: desAcum ? Number(desAcum.value) || 0 : 0
+});
+
+   localStorage.setItem('reempaque', JSON.stringify(data));
+});
+}
+
+
+
 
 // === BOOT REEMPAQUE ===
 document.getElementById('registrar-reempaque').onclick = () => {
@@ -1091,8 +1196,7 @@ document.getElementById('registrar-reempaque').onclick = () => {
 };
 
 
-window.addEventListener('load', cargarReempaqueLS);
-document.querySelector('#reempaque-table').addEventListener('input', guardarReempaqueLS);
+
 </script>
 
   </div>
