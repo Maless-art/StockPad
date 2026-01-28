@@ -64,6 +64,39 @@
     .actions .danger{ background:#e53935; color:#fff; }
     .actions button.approve{ background:#1976d2; color:#fff; }
     .actions button.approve:hover{ background:#1565c0; }
+.rn-modal{
+  position:fixed; inset:0;
+  background: rgba(0,0,0,.55);
+  display:flex; align-items:center; justify-content:center;
+  padding:16px; z-index:9999;
+}
+.rn-card{
+  width:min(520px, 96vw);
+  background:#0b1a12;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:16px;
+  box-shadow: 0 16px 50px rgba(0,0,0,.55);
+  color:#f3fff9;
+}
+.rn-head{
+  display:flex; align-items:flex-start; justify-content:space-between;
+  padding:14px 14px 8px;
+  border-bottom:1px solid rgba(255,255,255,.10);
+}
+.rn-title{ font-size:18px; font-weight:800; }
+.rn-sub{ font-size:12px; opacity:.8; margin-top:2px; }
+.rn-body{ padding:12px 14px; font-size:14px; color:#d7efe3; }
+.rn-actions{ padding:0 14px 14px; display:flex; justify-content:flex-end; }
+.rn-btn{
+  background:#18c26e; color:#07140e; border:0;
+  padding:10px 14px; border-radius:12px; font-weight:800;
+}
+.rn-x{
+  background:transparent; border:0; color:#f3fff9;
+  font-size:18px; line-height:1; padding:6px 8px; opacity:.9;
+}
+.hidden{ display:none !important; }
+
   </style>
 </head>
 
@@ -88,7 +121,7 @@
    <header class="app-header">
 <div style="display:flex; align-items:center; gap:6px;">
   <img src="icon-192.png" alt="StockPad" class="header-logo left">
-  <span style="font-size:12px; color:#666; font-weight:600;">v1.0.2</span>
+  <span style="font-size:12px; color:#666; font-weight:600;">v1.1.0</span>
 </div>
 
 
@@ -615,7 +648,7 @@ function cargarReenvaseLS() {
 
   filas.forEach(tr => {
     const conversionInput = tr.querySelector('td:nth-child(5) input');
-    let conversion = Number(conversionInput.value) || 0;
+    let conversion = parseFloat((conversionInput.value || "").replace(",", ".")) || 0;
     if (conversion <= 0) return;
 
     const disponible = LIMITE - acumulado;
@@ -907,7 +940,20 @@ filas.forEach(function (tr) {
     { wch: 15 }
   ];
 
-  XLSX.writeFile(wb, `reenvase_${fecha}.xls`);
+  // 🔎 Sacar tanque del campo Producto (último número: "ACEITE 40 - 49" => 49)
+const productos = [...document.querySelectorAll('#reenvase-table tbody tr td:nth-child(2) input')]
+  .map(i => (i?.value || "").trim())
+  .filter(Boolean);
+
+const texto = productos.join(" | ");
+const match = texto.match(/(\d+)\s*$/);        // último número
+const tanqueNum = match ? match[1] : "SN";     // SN = sin número
+
+const hhmm = new Date().toTimeString().slice(0,5).replace(':','');
+const nombre = `reenvase_T${tanqueNum}_${fecha}_${hhmm}.xlsx`;
+
+XLSX.writeFile(wb, nombre);
+
 }
    
 function reiniciarReempaque() {
@@ -984,7 +1030,20 @@ function exportarReempaqueExcel() {
     { wch: 12 }
   ];
 
-  XLSX.writeFile(wb, `reempaque_${fecha}.xls`);
+  // --- Nombre único + tanque (último número en "Producto") ---
+  const productos = [...document.querySelectorAll('#reempaque-table tbody tr td:nth-child(2) input')]
+    .map(i => (i?.value || "").trim())
+    .filter(Boolean);
+
+  const texto = productos.join(" | "); // por si hay varias filas
+  const m = texto.match(/(\d+)\s*$/) || texto.match(/-(\s*\d+)\s*$/); // último número
+  const tanque = m ? String(m[1]).replace(/\s+/g,'') : "";
+
+  const hhmm = hoy.toTimeString().slice(0,5).replace(':','');
+  const nombre = `reempaque_${tanque ? "T" + tanque + "_" : ""}${fecha}_${hhmm}.xlsx`;
+
+  XLSX.writeFile(wb, nombre);
+
 }
 const LS_REEMPAQUE_KEY = 'reempaque';
 function registrarReempaque() {
@@ -1172,7 +1231,6 @@ if (desIn && desAcum) {
   }
 }
 
-
   data.push({
   cantidad,
   producto,
@@ -1186,18 +1244,68 @@ if (desIn && desAcum) {
 });
 }
 
-
-
-
-// === BOOT REEMPAQUE ===
 document.getElementById('registrar-reempaque').onclick = () => {
   registrarReempaque();
   alert('✅ Reempaque registrado');
 };
 
 
+// ================== NOTAS DE ACTUALIZACIÓN ==================
+const APP_VERSION = "1.1.0";
+
+function showReleaseNotesIfNeeded() {
+  const lastSeen = localStorage.getItem("stockpad_last_seen_version");
+  if (lastSeen === APP_VERSION) return;
+
+  const notesHTML = `
+    <ul style="margin:8px 0 0; padding-left:18px; line-height:1.35">
+      <li><b>Export Excel:</b> cambio en formato de nombre de excel, ahoraincluye número de tanque</li> //CAMBIOS EN LA VERSION
+      <li><b>Reenvase:</b> ahora suma conversiones decimales (ej. 0.25, 0.50, 0.75).</li> //CAMBIOS EN LA VERSION
+    </ul>
+  `;
+
+  openReleaseNotesModal(notesHTML);
+  localStorage.setItem("stockpad_last_seen_version", APP_VERSION);
+}
+
+function openReleaseNotesModal(notesHTML) {
+  const modal = document.getElementById("releaseNotesModal");
+  const body  = document.getElementById("releaseNotesBody");
+  body.innerHTML = notesHTML;
+  modal.classList.remove("hidden");
+}
+
+function closeReleaseNotesModal() {
+  document.getElementById("releaseNotesModal").classList.add("hidden");
+}
+document.addEventListener("DOMContentLoaded", showReleaseNotesIfNeeded);
+
 
 </script>
+<div id="releaseNotesModal" class="rn-modal hidden">
+  <div class="rn-card">
+    <div class="rn-head">
+      <div>
+        <div class="rn-title">Notas de Actualización</div>
+        <div class="rn-sub">StockPad v<span id="rnVer">1.1.0</span></div>
+      </div>
+      <button class="rn-x" onclick="closeReleaseNotesModal()">✕</button>
+    </div>
+
+    <div id="releaseNotesBody" class="rn-body"></div>
+
+    <div class="rn-actions">
+      <button class="rn-btn" onclick="closeReleaseNotesModal()">Entendido</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // opcional: refleja versión en el modal
+  document.addEventListener("DOMContentLoaded", () => {
+    const el = document.getElementById("rnVer");
+    if(el) el.textContent = APP_VERSION;
+  });
 
   </div>
 </body>
