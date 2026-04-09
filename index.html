@@ -121,7 +121,7 @@
    <header class="app-header">
 <div style="display:flex; align-items:center; gap:6px;">
   <img src="icon-192.png" alt="StockPad" class="header-logo left">
-  <span style="font-size:12px; color:#666; font-weight:600;">v1.1.0</span>
+  <span style="font-size:12px; color:#666; font-weight:600;">v1.1.1</span>
 </div>
 
 
@@ -607,7 +607,7 @@ function cargarReenvaseLS() {
   }
 }
 
-      function confirmarIngresoReenvase() {
+function confirmarIngresoReenvase() {
   let huboCambio = false;
 
   document.querySelectorAll('#reenvase-table tbody tr').forEach(tr => {
@@ -632,44 +632,44 @@ function cargarReenvaseLS() {
 
 }
 
+      function confirmarConversionReenvase() {
 
-     function confirmarConversionReenvase() {
   const filas = document.querySelectorAll('#reenvase-table tbody tr');
   if (!filas.length) return;
 
-  // límite desde U/M (5 o 55)
   const umInput = filas[0].querySelector('td:nth-child(6) input');
   const LIMITE = Number(umInput.value) || 55;
 
   asegurarTanque(tanqueActivo);
 
-  // acumulado REAL del tanque
   let acumulado = acumuladoPorTanque[tanqueActivo] || 0;
 
-  filas.forEach(tr => {
+  for (const tr of filas) {
     const conversionInput = tr.querySelector('td:nth-child(5) input');
     let conversion = parseFloat((conversionInput.value || "").replace(",", ".")) || 0;
-    if (conversion <= 0) return;
+
+    if (conversion <= 0) continue;
 
     const disponible = LIMITE - acumulado;
 
     if (disponible <= 0) {
       alert(`⛔ Tanque lleno (${LIMITE} gls).`);
-      conversionInput.value = '';
       return;
     }
 
     if (conversion > disponible) {
       alert(`⛔ Solo puedes agregar ${disponible} gls.`);
-      conversion = disponible;
+      conversionInput.focus();
+      conversionInput.select();
+      return;
     }
 
     acumulado += conversion;
     conversionInput.value = '';
-  });
+  }
 
-   acumuladoPorTanque[tanqueActivo] = acumulado;
-  
+  acumuladoPorTanque[tanqueActivo] = acumulado;
+
   filas.forEach(tr => {
     const rInput = tr.querySelector('td:nth-child(7) input');
     rInput.value = acumulado;
@@ -1251,7 +1251,7 @@ document.getElementById('registrar-reempaque').onclick = () => {
 
 
 // ================== NOTAS DE ACTUALIZACIÓN ==================
-const APP_VERSION = "1.1.0";
+const APP_VERSION = "1.1.1";
 
 function showReleaseNotesIfNeeded() {
   const lastSeen = localStorage.getItem("stockpad_last_seen_version");
@@ -1259,9 +1259,9 @@ function showReleaseNotesIfNeeded() {
 
   const notesHTML = `
     <ul style="margin:8px 0 0; padding-left:18px; line-height:1.35">
-      <li><b>Export Excel:</b> cambio en formato de nombre de excel, ahora incluye número de tanque</li> <!-- CAMBIOS EN LA VERSION -->
+      <li><b>Export Excel:</b> Se corrigió error al momento de convertir galones en tanque</li> <!-- CAMBIOS EN LA VERSION -->
 
-      <li><b>Reenvase:</b> ahora suma conversiones decimales (ej. 0.25, 0.50, 0.75).</li> <!-- CAMBIOS EN LA VERSION -->
+      <!-- <li><b>Reenvase:</b> ahora suma conversiones decimales (ej. 0.25, 0.50, 0.75).</li> --> <!-- CAMBIOS EN LA VERSION -->
 
     </ul>
   `;
@@ -1289,7 +1289,7 @@ document.addEventListener("DOMContentLoaded", showReleaseNotesIfNeeded);
     <div class="rn-head">
       <div>
         <div class="rn-title">Notas de Actualización</div>
-        <div class="rn-sub">StockPad v<span id="rnVer">1.1.0</span></div>
+        <div class="rn-sub">StockPad v<span id="rnVer">1.1.1</span></div>
       </div>
       <button class="rn-x" onclick="closeReleaseNotesModal()">✕</button>
     </div>
